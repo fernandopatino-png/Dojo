@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 public class User {
 
     /** Identificador único del usuario */
-    private Long id;
+    private String id;
 
     /** Nombre completo del usuario */
     private String name;
@@ -64,7 +64,7 @@ public class User {
      * 4. No necesitas recordar el orden de parámetros
      */
     public static class Builder {
-        private Long id;
+        private String id;
         private String name;
         private String type;
         private String number;
@@ -76,7 +76,7 @@ public class User {
          * @param id Identificador único
          * @return El mismo builder para encadenar métodos
          */
-        public Builder id(Long id) {
+        public Builder id(String id) {
             this.id = id;
             return this;
         }

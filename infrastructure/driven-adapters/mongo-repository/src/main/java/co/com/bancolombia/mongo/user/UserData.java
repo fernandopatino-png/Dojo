@@ -23,7 +23,7 @@ public class UserData {
 
     /** ID único del usuario (se mapea a _id en MongoDB) */
     @Id
-    private Long id;
+    private String id;
 
     /** Nombre completo del usuario */
     private String name;

@@ -26,13 +26,13 @@ public class MongoUserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public Mono<User> findUserById(Long id) {
+    public Mono<User> findUserById(String id) {
         return template.findById(id, UserData.class)
                 .map(this::toUserIdentity);
     }
 
     @Override
-    public Mono<Boolean> validateUserExists(Long id) {
+    public Mono<Boolean> validateUserExists(String id) {
         return template.exists(Query.query(Criteria.where("_id").is(id)), UserData.class);
     }
 

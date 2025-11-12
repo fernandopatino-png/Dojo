@@ -45,7 +45,7 @@ public class UserController {
      * GET /api/users/{id}
      */
     @GetMapping("/{id}")
-    public Mono<User> getUserById(@PathVariable Long id) {
+    public Mono<User> getUserById(@PathVariable("id") String id) {
         log.info("Getting user by id: {}", id);
         return userRepository.findUserById(id);
     }
@@ -55,7 +55,7 @@ public class UserController {
      * GET /api/users/{id}/exists
      */
     @GetMapping("/{id}/exists")
-    public Mono<Boolean> userExists(@PathVariable Long id) {
+    public Mono<Boolean> userExists(@PathVariable("id")  String id) {
         log.info("Validating if user exists: {}", id);
         return userRepository.validateUserExists(id);
     }

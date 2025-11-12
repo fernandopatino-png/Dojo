@@ -40,7 +40,7 @@ subprojects {
         testAnnotationProcessor  "org.projectlombok:lombok:${lombokVersion}"
         implementation platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
         compileOnly 'com.fasterxml.jackson.core:jackson-databind'
-        implementation 'org.slf4j:slf4j-api:2.0.7'
+        compileOnly 'org.slf4j:slf4j-api:2.0.7'
     }
 
     tasks.withType(Test).configureEach {

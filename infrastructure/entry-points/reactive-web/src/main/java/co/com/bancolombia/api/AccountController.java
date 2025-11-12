@@ -47,7 +47,7 @@ public class AccountController {
      * GET /api/accounts/{id}
      */
     @GetMapping("/{id}")
-    public Mono<AccountDTO> getAccountById(@PathVariable Long id) {
+    public Mono<AccountDTO> getAccountById(@PathVariable ("id")  Long id) {
         log.info("Getting account by id: {}", id);
         return accountManagementUseCase.getAccountById(id)
             .map(this::toDTO);
@@ -58,7 +58,7 @@ public class AccountController {
      * GET /api/accounts/{id}/cached
      */
     @GetMapping("/{id}/cached")
-    public Mono<AccountDTO> getAccountByIdCached(@PathVariable Long id) {
+    public Mono<AccountDTO> getAccountByIdCached(@PathVariable ("id")  Long id) {
         log.info("Getting account by id with cache: {}", id);
         return accountSearchUseCase.findByIdWithCache(id)
             .map(this::toDTO);
@@ -69,7 +69,7 @@ public class AccountController {
      * GET /api/accounts/owner/{ownerId}
      */
     @GetMapping("/owner/{ownerId}")
-    public Flux<AccountDTO> getAccountsByOwner(@PathVariable Long ownerId) {
+    public Flux<AccountDTO> getAccountsByOwner(@PathVariable ("ownerId") Long ownerId) {
         log.info("Getting accounts by owner: {}", ownerId);
         return accountManagementUseCase.getAccountsByOwner(ownerId)
             .map(this::toDTO);
@@ -92,8 +92,8 @@ public class AccountController {
      */
     @PutMapping("/{id}/balance")
     public Mono<AccountDTO> updateBalance(
-            @PathVariable Long id,
-            @RequestParam Double newBalance) {
+            @PathVariable ("id") Long id,
+            @RequestParam ("newBalance") Double newBalance) {
         log.info("Updating balance for account {}: {}", id, newBalance);
         return accountManagementUseCase.updateBalance(id, newBalance)
             .map(this::toDTO);
@@ -119,7 +119,7 @@ public class AccountController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> deleteAccount(@PathVariable Long id) {
+    public Mono<Void> deleteAccount(@PathVariable ("id") Long id) {
         log.info("Deleting account: {}", id);
         return accountManagementUseCase.deleteAccount(id);
     }

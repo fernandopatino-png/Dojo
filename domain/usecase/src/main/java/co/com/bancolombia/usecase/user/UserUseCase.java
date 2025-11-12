@@ -17,7 +17,7 @@ public class UserUseCase {
                 .switchIfEmpty(Mono.error(() -> new Exception("User already exists")));
     }
 
-    public Mono<User> findUserById(Long id) {
+    public Mono<User> findUserById(String id) {
         return repository.findUserById(id);
     }
 }
