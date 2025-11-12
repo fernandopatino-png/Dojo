@@ -3,7 +3,6 @@ package co.com.bancolombia.api;
 import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.usecase.account.AccountUseCase;
 import co.com.bancolombia.usecase.list.ListUseCase;
-import co.com.bancolombia.usecase.test.TestUseCase;
 import co.com.bancolombia.usecase.user.UserUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,7 +18,6 @@ public class Handler {
     private final UserUseCase userUseCase;
     private final AccountUseCase accountUseCase;
     private final ListUseCase listUseCase;
-    private final TestUseCase testUseCase;
 
     public Mono<ServerResponse> registerUserUseCase(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(User.class)

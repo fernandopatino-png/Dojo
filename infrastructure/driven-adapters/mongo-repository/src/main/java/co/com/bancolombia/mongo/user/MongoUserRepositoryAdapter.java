@@ -1,11 +1,9 @@
-package co.com.bancolombia.mongo;
+package co.com.bancolombia.mongo.user;
 
 import co.com.bancolombia.model.account.Account;
-import co.com.bancolombia.model.account.gateways.AccountRepository;
 import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.model.user.gateways.UserRepository;
 import co.com.bancolombia.mongo.account.AccountData;
-import co.com.bancolombia.mongo.user.UserData;
 import lombok.RequiredArgsConstructor;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
@@ -16,20 +14,10 @@ import reactor.core.publisher.Mono;
 
 @Repository
 @RequiredArgsConstructor
-public class ReactiveMongoDBTemplate implements UserRepository, AccountRepository {
+public class MongoUserRepositoryAdapter implements UserRepository {
 
     private final ReactiveMongoTemplate template;
     private final ObjectMapper objectMapper;
-
-    @Override
-    public Mono<Account> getAccountById(Long id) {
-        return null;
-    }
-
-    @Override
-    public Mono<Account> getAccountByOwner(Long ownerId) {
-        return null;
-    }
 
     @Override
     public Mono<User> registerUser(User user) {
@@ -57,7 +45,7 @@ public class ReactiveMongoDBTemplate implements UserRepository, AccountRepositor
     }
 
     protected User toUserIdentity(UserData userData) {
-        return objectMapper.mapBuilder(userData, User.UserBuilder.class).build();
+        return objectMapper.mapBuilder(userData, User.Builder.class).build();
     }
 
     protected Account toAccountIdentity(AccountData accountData) {

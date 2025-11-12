@@ -10,29 +10,49 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 
 /**
- * Configuración que registra los listeners de eventos al iniciar la aplicación
- * Demuestra Observer Pattern en acción
+ * CONFIGURACIÓN DE LISTENERS DE EVENTOS
+ *
+ * PATRÓN OBSERVER - Configuración
+ *
+ * ¿Qué hace esta clase?
+ * Registra los "observadores" (listeners) cuando la aplicación inicia.
+ *
+ * Es como suscribir personas a un canal:
+ * - AccountEventUseCase es el canal
+ * - NotificationListener y AuditListener son los suscriptores
+ *
+ * Cuando el canal publique algo, ambos lo recibirán.
+ *
+ * @EventListener(ApplicationReadyEvent.class):
+ * Significa "ejecuta este método cuando la aplicación esté lista"
  */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class EventListenersConfig {
 
+    /** Use Case de eventos (inyectado automáticamente por Spring) */
     private final AccountEventUseCase accountEventUseCase;
 
+    /**
+     * REGISTRA LOS LISTENERS AL INICIAR LA APLICACIÓN
+     *
+     * Se ejecuta automáticamente cuando Spring termina de iniciar.
+     */
     @EventListener(ApplicationReadyEvent.class)
     public void registerEventListeners() {
-        log.info("Registering account event listeners...");
+        log.info("📢 Registrando listeners de eventos de cuenta...");
 
-        // Registrar listener de notificaciones
+        // LISTENER 1: Notificaciones
+        // Este listener envía notificaciones al usuario
         accountEventUseCase.addListener(new NotificationListener());
-        log.info("NotificationListener registered");
+        log.info("   ✓ NotificationListener registrado");
 
-        // Registrar listener de auditoría
+        // LISTENER 2: Auditoría
+        // Este listener guarda logs para auditoría legal
         accountEventUseCase.addListener(new AuditListener());
-        log.info("AuditListener registered");
+        log.info("   ✓ AuditListener registrado");
 
-        log.info("All event listeners registered successfully");
+        log.info("✅ Total de listeners activos: {}", accountEventUseCase.getListenerCount());
     }
 }
-

@@ -17,6 +17,13 @@ plugins {
 	id 'jacoco'
 }
 
+// build.gradle
+cleanPlugin {
+    modelProps {
+        whitelistedDependencies = 'org.slf4j:slf4j-api'
+    }
+}
+
 sonar {
     def modules = subprojects.projectDir.collect { "${it.toString().replace(project.projectDir.toString() + "/", "")}" }
     properties {

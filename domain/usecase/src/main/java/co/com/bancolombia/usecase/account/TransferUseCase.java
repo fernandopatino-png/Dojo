@@ -3,156 +3,160 @@ package co.com.bancolombia.usecase.account;
 import co.com.bancolombia.model.account.Account;
 import co.com.bancolombia.model.account.TransferResult;
 import co.com.bancolombia.model.account.gateways.AccountRepository;
-import co.com.bancolombia.model.user.gateways.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 import java.util.UUID;
 
 /**
- * Use Case de transferencia con reglas de negocio complejas
- * Demuestra Clean Architecture: lógica de negocio independiente de frameworks
+ * USE CASE: TRANSFERENCIA ENTRE CUENTAS
+ *
+ * CLEAN ARCHITECTURE - Capa de Casos de Uso
+ *
+ * ¿Qué es Clean Architecture?
+ * Es una forma de organizar el código en CAPAS:
+ *
+ * 1. DOMINIO (centro): Modelos puros (Account, User)
+ * 2. CASOS DE USO (esta capa): Lógica de negocio
+ * 3. ADAPTADORES: Conexión con BD, APIs, etc.
+ * 4. FRAMEWORKS: Spring, MongoDB, etc.
+ *
+ * REGLA DE ORO:
+ * Las capas internas NO conocen las externas.
+ * Esta clase NO sabe que usa MongoDB, podría ser PostgreSQL.
+ *
+ * ¿Qué hace este Use Case?
+ * Implementa la LÓGICA DE NEGOCIO de transferir dinero entre cuentas.
+ *
+ * VALIDACIONES que aplica:
+ * 1. Las cuentas deben ser diferentes
+ * 2. El monto debe ser positivo
+ * 3. No debe exceder el límite máximo ($10,000)
+ * 4. La cuenta origen debe tener saldo suficiente
+ * 5. Ambas cuentas deben existir
  */
 @Slf4j
 @RequiredArgsConstructor
 public class TransferUseCase {
 
+    // DEPENDENCIAS (inyectadas por el framework)
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
-    private final AccountEventUseCase eventUseCase;
 
+    /** Límite máximo por transferencia */
     private static final Double MAX_TRANSFER_AMOUNT = 10000.0;
-    private static final Double MIN_BALANCE_AFTER_TRANSFER = 0.0;
 
     /**
-     * Ejecuta una transferencia entre dos cuentas con validaciones completas
+     * EJECUTA UNA TRANSFERENCIA ENTRE DOS CUENTAS
+     *
+     * Flujo del algoritmo:
+     * 1. Validar datos básicos (cuentas diferentes, monto válido)
+     * 2. Buscar ambas cuentas en la base de datos
+     * 3. Validar que tengan saldo suficiente
+     * 4. Actualizar saldos de ambas cuentas
+     * 5. Guardar cambios en la base de datos
+     * 6. Retornar resultado (éxito o error)
+     *
+     * PROGRAMACIÓN REACTIVA:
+     * Retorna Mono<TransferResult> en vez de TransferResult directo.
+     * ¿Por qué? Permite operaciones no bloqueantes (más eficiente).
+     *
+     * @param fromAccountId ID de la cuenta que envía dinero
+     * @param toAccountId ID de la cuenta que recibe dinero
+     * @param amount Cantidad a transferir
+     * @return Mono con el resultado de la transferencia
      */
     public Mono<TransferResult> transfer(Long fromAccountId, Long toAccountId, Double amount) {
-        log.info("Initiating transfer from {} to {} amount: {}", fromAccountId, toAccountId, amount);
+        log.info("🔄 Iniciando transferencia: ${} desde cuenta {} hacia cuenta {}",
+            amount, fromAccountId, toAccountId);
 
-        // Validaciones iniciales
+        // VALIDACIÓN 1: Las cuentas deben ser diferentes
         if (fromAccountId.equals(toAccountId)) {
-            return Mono.just(TransferResult.failure(fromAccountId, toAccountId, amount,
-                "Cannot transfer to the same account"));
+            log.warn("❌ Error: Intentando transferir a la misma cuenta");
+            return Mono.just(TransferResult.failure(
+                fromAccountId, toAccountId, amount,
+                "No puedes transferir dinero a la misma cuenta"
+            ));
         }
 
+        // VALIDACIÓN 2: El monto debe ser positivo
         if (amount <= 0) {
-            return Mono.just(TransferResult.failure(fromAccountId, toAccountId, amount,
-                "Transfer amount must be positive"));
+            log.warn("❌ Error: Monto inválido: ${}", amount);
+            return Mono.just(TransferResult.failure(
+                fromAccountId, toAccountId, amount,
+                "El monto debe ser mayor a $0"
+            ));
         }
 
+        // VALIDACIÓN 3: No exceder el límite máximo
         if (amount > MAX_TRANSFER_AMOUNT) {
-            return Mono.just(TransferResult.failure(fromAccountId, toAccountId, amount,
-                "Transfer amount exceeds maximum limit of " + MAX_TRANSFER_AMOUNT));
+            log.warn("❌ Error: Monto excede el límite máximo de ${}", MAX_TRANSFER_AMOUNT);
+            return Mono.just(TransferResult.failure(
+                fromAccountId, toAccountId, amount,
+                "El monto excede el límite máximo de $" + MAX_TRANSFER_AMOUNT
+            ));
         }
 
-        // Buscar ambas cuentas
-        return accountRepository.getAccountById(fromAccountId)
-            .zipWith(accountRepository.getAccountById(toAccountId))
-            .flatMap(tuple -> validateAndExecuteTransfer(tuple, amount))
-            .flatMap(result -> saveAccountsAndNotify(result))
-            .onErrorResume(error -> {
-                log.error("Transfer failed: {}", error.getMessage());
-                return Mono.just(TransferResult.failure(fromAccountId, toAccountId, amount,
-                    "Transfer failed: " + error.getMessage()));
-            });
-    }
+        // PASO 1: Buscar ambas cuentas en paralelo (más eficiente)
+        Mono<Account> fromAccountMono = accountRepository.getAccountById(fromAccountId);
+        Mono<Account> toAccountMono = accountRepository.getAccountById(toAccountId);
 
-    /**
-     * Valida las reglas de negocio y ejecuta la transferencia
-     */
-    private Mono<TransferContext> validateAndExecuteTransfer(Tuple2<Account, Account> accounts, Double amount) {
-        Account fromAccount = accounts.getT1();
-        Account toAccount = accounts.getT2();
+        // PASO 2: Cuando ambas se obtienen, ejecutar la transferencia
+        return fromAccountMono.zipWith(toAccountMono)
+            .flatMap(tuple -> {
+                Account fromAccount = tuple.getT1();
+                Account toAccount = tuple.getT2();
 
-        // Validar saldo suficiente
-        if (fromAccount.getBalance() < amount) {
-            return Mono.error(new IllegalStateException(
-                "Insufficient balance. Available: " + fromAccount.getBalance()));
-        }
-
-        // Validar saldo mínimo después de la transferencia
-        if (fromAccount.getBalance() - amount < MIN_BALANCE_AFTER_TRANSFER) {
-            return Mono.error(new IllegalStateException(
-                "Transfer would leave balance below minimum required: " + MIN_BALANCE_AFTER_TRANSFER));
-        }
-
-        // Validar que ambas cuentas tengan propietarios
-        return userRepository.validateUserExists(fromAccount.getOwnerId())
-            .zipWith(userRepository.validateUserExists(toAccount.getOwnerId()))
-            .flatMap(userValidations -> {
-                if (!userValidations.getT1()) {
-                    return Mono.error(new IllegalStateException("Source account owner not found"));
-                }
-                if (!userValidations.getT2()) {
-                    return Mono.error(new IllegalStateException("Destination account owner not found"));
+                // VALIDACIÓN 4: Verificar saldo suficiente
+                if (fromAccount.getBalance() < amount) {
+                    log.warn("❌ Error: Saldo insuficiente. Disponible: ${}, Requerido: ${}",
+                        fromAccount.getBalance(), amount);
+                    return Mono.just(TransferResult.failure(
+                        fromAccountId, toAccountId, amount,
+                        "Saldo insuficiente. Disponible: $" + fromAccount.getBalance()
+                    ));
                 }
 
-                // Ejecutar la transferencia
-                Double oldFromBalance = fromAccount.getBalance();
-                Double oldToBalance = toAccount.getBalance();
+                // PASO 3: Ejecutar la transferencia (actualizar saldos)
+                log.info("✓ Validaciones pasadas. Ejecutando transferencia...");
 
+                // Crear cuentas actualizadas con nuevos saldos
                 Account updatedFromAccount = Account.builder()
                     .id(fromAccount.getId())
                     .ownerId(fromAccount.getOwnerId())
-                    .balance(fromAccount.getBalance() - amount)
+                    .balance(fromAccount.getBalance() - amount)  // Restar
                     .build();
 
                 Account updatedToAccount = Account.builder()
                     .id(toAccount.getId())
                     .ownerId(toAccount.getOwnerId())
-                    .balance(toAccount.getBalance() + amount)
+                    .balance(toAccount.getBalance() + amount)    // Sumar
                     .build();
 
-                return Mono.just(new TransferContext(
-                    updatedFromAccount, updatedToAccount,
-                    oldFromBalance, oldToBalance, amount
+                // PASO 4: Guardar ambas cuentas actualizadas
+                return accountRepository.update(updatedFromAccount)
+                    .then(accountRepository.update(updatedToAccount))
+                    .then(Mono.fromCallable(() -> {
+                        // PASO 5: Generar resultado exitoso
+                        String transferId = UUID.randomUUID().toString();
+                        log.info("✅ Transferencia completada exitosamente. ID: {}", transferId);
+
+                        return TransferResult.success(
+                            transferId,
+                            fromAccountId,
+                            toAccountId,
+                            amount
+                        );
+                    }));
+            })
+            .onErrorResume(error -> {
+                // Manejar cualquier error inesperado
+                log.error("❌ Error inesperado durante la transferencia: {}", error.getMessage());
+                return Mono.just(TransferResult.failure(
+                    fromAccountId, toAccountId, amount,
+                    "Error del sistema: " + error.getMessage()
                 ));
             });
-    }
-
-    /**
-     * Guarda las cuentas actualizadas y notifica eventos
-     */
-    private Mono<TransferResult> saveAccountsAndNotify(TransferContext context) {
-        return accountRepository.update(context.fromAccount)
-            .then(accountRepository.update(context.toAccount))
-            .then(Mono.defer(() -> {
-                // Notificar eventos de cambio de saldo
-                return eventUseCase.notifyBalanceChanged(
-                    context.fromAccount, context.oldFromBalance, context.fromAccount.getBalance()
-                ).then(eventUseCase.notifyBalanceChanged(
-                    context.toAccount, context.oldToBalance, context.toAccount.getBalance()
-                ));
-            }))
-            .then(Mono.just(TransferResult.success(
-                UUID.randomUUID().toString(),
-                context.fromAccount.getId(),
-                context.toAccount.getId(),
-                context.amount
-            )));
-    }
-
-    /**
-     * Clase interna para mantener el contexto de la transferencia
-     */
-    private static class TransferContext {
-        final Account fromAccount;
-        final Account toAccount;
-        final Double oldFromBalance;
-        final Double oldToBalance;
-        final Double amount;
-
-        TransferContext(Account fromAccount, Account toAccount,
-                       Double oldFromBalance, Double oldToBalance, Double amount) {
-            this.fromAccount = fromAccount;
-            this.toAccount = toAccount;
-            this.oldFromBalance = oldFromBalance;
-            this.oldToBalance = oldToBalance;
-            this.amount = amount;
-        }
     }
 }
 
