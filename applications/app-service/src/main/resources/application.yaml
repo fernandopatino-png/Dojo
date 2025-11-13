@@ -13,7 +13,7 @@ spring:
     include: null
   data:
     mongodb:
-      uri: "mongodb://admin:admin@localhost:27017/mydatabase?authSource=admin"
+      uri: "mongodb+srv://dojoCA:6Ue8RTzjGwwSv07i@cluster0.eurfj67.mongodb.net"
       database: "test"
 management:
   endpoints:

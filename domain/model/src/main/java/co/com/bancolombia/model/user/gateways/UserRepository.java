@@ -7,7 +7,7 @@ public interface UserRepository {
 
     Mono<User> registerUser(User user);
 
-    Mono<User> findUserById(Long id);
+    Mono<User> findUserById(String id);
 
-    Mono<Boolean> validateUserExists(Long id);
+    Mono<Boolean> validateUserExists(String id);
 }
