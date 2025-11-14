@@ -8,9 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
-/**
- * REST Controller para operaciones de usuarios
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/users")
@@ -19,41 +16,27 @@ public class UserController {
 
     private final UserRepository userRepository;
 
-    /**
-     * Registrar nuevo usuario con Builder Pattern
-     * POST /api/users
-     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<User> registerUser(@RequestBody UserRequest request) {
         log.info("Registering user: {}", request.getName());
-
-        // Usar Builder Pattern con validaciones
+        //Usar Builder Pattern con validaciones
         User user = User.builder()
-            .name(request.getName())
-            .email(request.getEmail())
-            .type(request.getType())
-            .number(request.getNumber())
-            .active(true)
-            .build();
-
+                .name(request.getName())
+                .email(request.getEmail())
+                .type(request.getType())
+                .number(request.getNumber())
+                .active(true)
+                .build();
         return userRepository.registerUser(user);
     }
 
-    /**
-     * Obtener usuario por ID
-     * GET /api/users/{id}
-     */
     @GetMapping("/{id}")
     public Mono<User> getUserById(@PathVariable Long id) {
         log.info("Getting user by id: {}", id);
         return userRepository.findUserById(id);
     }
 
-    /**
-     * Validar si usuario existe
-     * GET /api/users/{id}/exists
-     */
     @GetMapping("/{id}/exists")
     public Mono<Boolean> userExists(@PathVariable Long id) {
         log.info("Validating if user exists: {}", id);

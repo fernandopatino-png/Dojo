@@ -20,7 +20,7 @@ plugins {
 // build.gradle
 cleanPlugin {
     modelProps {
-        whitelistedDependencies = 'org.slf4j:slf4j-api'
+        whitelistedDependencies = 'org.projectlombok:lombok:1.18.38'
     }
 }
 

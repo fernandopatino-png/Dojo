@@ -14,10 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/**
- * REST Controller para operaciones de cuentas
- * Demuestra Clean Architecture: Entry Point que usa Use Cases
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/accounts")
@@ -27,96 +23,63 @@ public class AccountController {
     private final AccountManagementUseCase accountManagementUseCase;
     private final TransferUseCase transferUseCase;
     private final AccountSearchUseCase accountSearchUseCase;
-    private final TransactionHistoryUseCase transactionHistoryUseCase;
 
-    /**
-     * Crear una nueva cuenta
-     * POST /api/accounts
-     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<AccountDTO> createAccount(@RequestBody AccountDTO accountDTO) {
         log.info("Creating account: {}", accountDTO);
         Account account = toAccount(accountDTO);
         return accountManagementUseCase.createAccount(account)
-            .map(this::toDTO);
+                .map(this::toDTO);
     }
 
-    /**
-     * Obtener cuenta por ID
-     * GET /api/accounts/{id}
-     */
     @GetMapping("/{id}")
     public Mono<AccountDTO> getAccountById(@PathVariable Long id) {
         log.info("Getting account by id: {}", id);
         return accountManagementUseCase.getAccountById(id)
-            .map(this::toDTO);
+                .map(this::toDTO);
     }
 
-    /**
-     * Obtener cuenta por ID con cache (optimizado O(1))
-     * GET /api/accounts/{id}/cached
-     */
     @GetMapping("/{id}/cached")
     public Mono<AccountDTO> getAccountByIdCached(@PathVariable Long id) {
         log.info("Getting account by id with cache: {}", id);
         return accountSearchUseCase.findByIdWithCache(id)
-            .map(this::toDTO);
+                .map(this::toDTO);
     }
 
-    /**
-     * Obtener cuentas por propietario
-     * GET /api/accounts/owner/{ownerId}
-     */
     @GetMapping("/owner/{ownerId}")
     public Flux<AccountDTO> getAccountsByOwner(@PathVariable Long ownerId) {
         log.info("Getting accounts by owner: {}", ownerId);
         return accountManagementUseCase.getAccountsByOwner(ownerId)
-            .map(this::toDTO);
+                .map(this::toDTO);
     }
 
-    /**
-     * Listar todas las cuentas
-     * GET /api/accounts
-     */
     @GetMapping
     public Flux<AccountDTO> getAllAccounts() {
         log.info("Getting all accounts");
         return accountManagementUseCase.getAllAccounts()
-            .map(this::toDTO);
+                .map(this::toDTO);
     }
 
-    /**
-     * Actualizar saldo de cuenta
-     * PUT /api/accounts/{id}/balance
-     */
     @PutMapping("/{id}/balance")
     public Mono<AccountDTO> updateBalance(
             @PathVariable Long id,
             @RequestParam Double newBalance) {
         log.info("Updating balance for account {}: {}", id, newBalance);
         return accountManagementUseCase.updateBalance(id, newBalance)
-            .map(this::toDTO);
+                .map(this::toDTO);
     }
 
-    /**
-     * Realizar transferencia entre cuentas
-     * POST /api/accounts/transfer
-     */
     @PostMapping("/transfer")
     public Mono<TransferResponseDTO> transfer(@RequestBody TransferRequestDTO request) {
         log.info("Processing transfer: {}", request);
         return transferUseCase.transfer(
-                request.getFromAccountId(),
-                request.getToAccountId(),
-                request.getAmount())
-            .map(this::toTransferDTO);
+                        request.getFromAccountId(),
+                        request.getToAccountId(),
+                        request.getAmount())
+                .map(this::toTransferDTO);
     }
 
-    /**
-     * Eliminar cuenta
-     * DELETE /api/accounts/{id}
-     */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> deleteAccount(@PathVariable Long id) {
@@ -124,43 +87,39 @@ public class AccountController {
         return accountManagementUseCase.deleteAccount(id);
     }
 
-    /**
-     * Limpiar cache de búsquedas
-     * POST /api/accounts/cache/clear
-     */
     @PostMapping("/cache/clear")
     public Mono<Void> clearCache() {
         log.info("Clearing account search cache");
         return accountSearchUseCase.clearCache();
     }
 
-    // Mappers
+    //Mappers
     private Account toAccount(AccountDTO dto) {
         return Account.builder()
-            .id(dto.getId())
-            .ownerId(dto.getOwnerId())
-            .balance(dto.getBalance())
-            .build();
+                .id(dto.getId())
+                .ownerId(dto.getOwnerId())
+                .balance(dto.getBalance())
+                .build();
     }
 
     private AccountDTO toDTO(Account account) {
         return AccountDTO.builder()
-            .id(account.getId())
-            .ownerId(account.getOwnerId())
-            .balance(account.getBalance())
-            .build();
+                .id(account.getId())
+                .ownerId(account.getOwnerId())
+                .balance(account.getBalance())
+                .build();
     }
 
     private TransferResponseDTO toTransferDTO(TransferResult result) {
         return TransferResponseDTO.builder()
-            .transferId(result.getTransferId())
-            .fromAccountId(result.getFromAccountId())
-            .toAccountId(result.getToAccountId())
-            .amount(result.getAmount())
-            .success(result.isSuccess())
-            .message(result.getMessage())
-            .timestamp(result.getTimestamp())
-            .build();
+                .transferId(result.getTransferId())
+                .fromAccountId(result.getFromAccountId())
+                .toAccountId(result.getToAccountId())
+                .amount(result.getAmount())
+                .success(result.isSuccess())
+                .message(result.getMessage())
+                .timestamp(result.getTimestamp())
+                .build();
     }
 }
 

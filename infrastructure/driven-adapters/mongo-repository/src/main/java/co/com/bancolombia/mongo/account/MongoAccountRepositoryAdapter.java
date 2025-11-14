@@ -11,10 +11,7 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/**
- * Implementación completa del AccountRepository usando MongoDB Reactivo
- * Demuestra operaciones CRUD optimizadas con índices
- */
+
 @Repository
 @RequiredArgsConstructor
 public class MongoAccountRepositoryAdapter implements AccountRepository {
@@ -73,7 +70,7 @@ public class MongoAccountRepositoryAdapter implements AccountRepository {
         return mongoTemplate.exists(query, AccountData.class);
     }
 
-    // Mappers
+    //Mappers
     private AccountData toAccountData(Account account) {
         return objectMapper.map(account, AccountData.class);
     }

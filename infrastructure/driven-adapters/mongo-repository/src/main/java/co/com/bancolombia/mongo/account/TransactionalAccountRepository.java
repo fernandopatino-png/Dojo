@@ -7,10 +7,7 @@ import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-/**
- * Repositorio que demuestra operaciones coordinadas en MongoDB
- * Nota: Para transacciones ACID reales, MongoDB requiere un Replica Set configurado
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -18,13 +15,9 @@ public class TransactionalAccountRepository {
 
     private final ReactiveMongoTemplate mongoTemplate;
 
-    /**
-     * Crea un usuario y una cuenta de forma coordinada
-     * Si falla alguna operación, no se completa ninguna
-     */
+
     public Mono<UserAccountResult> createUserWithAccount(UserData user, AccountData account) {
         log.info("Creating user {} with account", user.getId());
-
         return mongoTemplate.insert(user)
             .flatMap(savedUser ->
                 mongoTemplate.insert(account)
@@ -34,10 +27,6 @@ public class TransactionalAccountRepository {
             .doOnError(error -> log.error("Failed to create user with account: {}", error.getMessage()));
     }
 
-    /**
-     * Transfiere saldo entre dos cuentas
-     * Nota: Sin transacciones, esto no es atómico. Para producción, usar transacciones reales.
-     */
     public Mono<TransferTransactionResult> transferBetweenAccountsTransactional(
             Long fromAccountId, Long toAccountId, Double amount) {
 
@@ -76,9 +65,6 @@ public class TransactionalAccountRepository {
             });
     }
 
-    /**
-     * Resultado de crear usuario con cuenta
-     */
     @lombok.Data
     @lombok.AllArgsConstructor
     public static class UserAccountResult {
@@ -86,9 +72,6 @@ public class TransactionalAccountRepository {
         private AccountData account;
     }
 
-    /**
-     * Resultado de transferencia transaccional
-     */
     @lombok.Data
     @lombok.AllArgsConstructor
     public static class TransferTransactionResult {

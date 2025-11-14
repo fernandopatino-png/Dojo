@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccountsByBalanceRange {
-    private Long range1; // 0 - 1000
-    private Long range2; // 1000 - 5000
-    private Long range3; // 5000+
+    private Long range1; //0 - 1000
+    private Long range2; //1000 - 5000
+    private Long range3; //5000+
 }
 
